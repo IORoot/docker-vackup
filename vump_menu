@@ -664,7 +664,7 @@ function push_to_registry()
     printf "\n"
 
     # Tag :IMAGE_ID
-    if ! docker image tag ${REPOSITORY_NAME}/${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
+    if ! docker image tag ${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
     then
         printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
         exit 1
@@ -676,11 +676,13 @@ function push_to_registry()
     spin "docker_push_to_registry" "pushing :${IMAGE_ID} to registry" "push to registry"
 
     # Delete from local images
-    # if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
-    # then
-    #     printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID}.\n"
-    #     exit 1
-    # fi
+    if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID}.\n"
+        exit 1
+    fi
+
+
 
     # Tag :Latest
     if ! docker image tag ${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
@@ -695,11 +697,13 @@ function push_to_registry()
     spin "docker_push_to_registry" "pushing :latest to registry" "push to registry"
 
     # Delete from local images
-    # if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
-    # then
-    #     printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:latest.\n"
-    #     exit 1
-    # fi
+    if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:latest.\n"
+        exit 1
+    fi
+
+
 }
 
 
