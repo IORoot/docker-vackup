@@ -6,7 +6,7 @@
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 
-CONTAINER_REGISTRY="thirtythree.azurecr.io/sites"
+REPOSITORY_NAME=""
 
 # Deine all spinnaker icons / colours
 function stylesheet()
@@ -55,6 +55,10 @@ function stylesheet()
     BORDER_RED_400='\e[38;2;248;113;113m'
 }
 
+# Source any Variables in a .env file.
+set -o allexport
+source .env set
++o allexport
 
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║                                                                              ║
@@ -633,16 +637,16 @@ function push_to_registry()
     printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
 
     printf "The image $IMAGE_NAME:latest will be pushed to the following locations:\n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$CONTAINER_REGISTRY/$IMAGE_NAME:latest ${RESET_TEXT} \n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$CONTAINER_REGISTRY/$IMAGE_NAME:$IMAGE_ID ${RESET_TEXT} \n\n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$REPOSITORY_NAME/$IMAGE_NAME:latest ${RESET_TEXT} \n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$REPOSITORY_NAME/$IMAGE_NAME:$IMAGE_ID ${RESET_TEXT} \n\n"
     confirmation "Do you want to push image to container registry?"
 
     printf "\n"
 
     # Tag :Latest
-    if ! docker image tag ${IMAGE_NAME}:latest ${CONTAINER_REGISTRY}/${IMAGE_NAME}:latest;
+    if ! docker image tag ${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
     then
-        printf "\n${TEXT_RED_500}Error: Failed to tag image ${IMAGE_NAME}:latest as ${CONTAINER_REGISTRY}/${IMAGE_NAME}:latest.\n"
+        printf "\n${TEXT_RED_500}Error: Failed to tag image ${IMAGE_NAME}:latest as ${REPOSITORY_NAME}/${IMAGE_NAME}:latest.\n"
         exit 1
     fi
 
@@ -652,7 +656,7 @@ function push_to_registry()
     spin "docker_push_to_registry" "pushing :latest to registry" "push to registry"
 
     # Tag :IMAGE_ID
-    if ! docker image tag ${CONTAINER_REGISTRY}/${IMAGE_NAME}:latest ${CONTAINER_REGISTRY}/${IMAGE_NAME}:${IMAGE_ID};
+    if ! docker image tag ${REPOSITORY_NAME}/${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
     then
         printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
         exit 1
@@ -668,7 +672,7 @@ function push_to_registry()
 # Push to the registry.
 function docker_push_to_registry()
 {
-    if ! docker push ${CONTAINER_REGISTRY}/${PUSH_IMAGE}:${PUSH_TAG};
+    if ! docker push ${REPOSITORY_NAME}/${PUSH_IMAGE}:${PUSH_TAG};
     then
         printf "\n${TEXT_RED_500}Error: Failed to push ${PUSH_REGISTRY}/${PUSH_IMAGE}:${PUSH_TAG} to container registry.\n"
         exit 1
