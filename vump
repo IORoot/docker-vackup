@@ -503,7 +503,8 @@ cmd_load() {
 #                                  │  Image of Container  │  
 #                                  └──────────────────────┘  
 #
-function cmd_dbsave() {
+function cmd_dbsave() 
+{
     CONTAINER="$1"
     IMAGE_NAME="$2"
     DB_DATABASE="$3"
@@ -567,7 +568,7 @@ function cmd_dbsave() {
     docker container rm "$CONTAINER_ID"
 
     printf "${TEXT_EMERALD_500}Successfully copied DB in container $CONTAINER into image $IMAGE_NAME, under /db-data${RESET_TEXT}\n"}
-
+}
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                          DBLOAD                          │
