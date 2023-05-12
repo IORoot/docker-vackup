@@ -90,14 +90,14 @@ function select_option {
     
     ref_to_content()   {
         VARNAME=$1
-        REFERENCE=${!VARNAME}
-        echo "${REFERENCE}"
+        NEWREFERENCE=${!VARNAME}
+        echo "${NEWREFERENCE}"
     }
 
     ref_to_ref_to_content()   {
         VARNAME=$1
-        REFERENCE=${!VARNAME}
-        OUTPUT=${!REFERENCE}
+        NEWREFERENCE=${!VARNAME}
+        OUTPUT=${!NEWREFERENCE}
         echo "${OUTPUT}"
     }
 
