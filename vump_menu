@@ -143,7 +143,7 @@ function save_option()
                     "bullet": "BORDER_FUCHSIA_400"
                 },
                 {
-                    "title": "🛢 MySQL Container → 🏞 backup image → 🗂 container registry",
+                    "title": "🛢 MySQL Container → 🗂 container registry",
                     "title_style": "",
                     "description": "Save MySQL dump to push to container registry",
                     "description_style": "TEXT_GRAY_500",
@@ -524,8 +524,11 @@ function cmd_dbsave() {
     clear
     select_container "Select MySQL Container to backup."
     CONTAINER="$CONTAINER"
-    ask_question "Name to give backup image? "
-    IMAGE_NAME="$ANSWER"
+
+    if [ -z ${DB_IMAGE_NAME+x} ]; then 
+        ask_question "Name to give backup image? "
+        DB_IMAGE_NAME="$ANSWER"
+    fi
 
     if [ -z ${DB_USERNAME+x} ]; then 
         ask_question "database username? "
@@ -543,17 +546,17 @@ function cmd_dbsave() {
     fi
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
-    printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
+    printf "${TEXT_GRAY_500}DB_IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_IMAGE_NAME"
     printf "${TEXT_GRAY_500}DB_DATABASE: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_DATABASE"
     printf "${TEXT_GRAY_500}DB_USERNAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n\n\n" "$DB_USERNAME"
 
-    confirmation "You are about to create a backup of database '${DB_DATABASE}' in container '${CONTAINER}' into an image called '${IMAGE_NAME}' "
+    confirmation "You are about to create a backup of database '${DB_DATABASE}' in container '${CONTAINER}' into an image called '${DB_IMAGE_NAME}' "
     spin "vump_dbsave" "Loading" "vump_dbsave"
 }
 
 vump_dbsave()
 {
-    vump --dbsave --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $IMAGE_NAME
+    vump --dbsave --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $DB_IMAGE_NAME
 }
 
 # ╭──────────────────────────────────────────────────────────╮
@@ -598,7 +601,7 @@ vump_dbsave()
 cmd_dbload() {
     clear
     select_image "Select database image to load data from. "
-    IMAGE_NAME="$IMAGE"
+    DB_IMAGE_NAME="$IMAGE"
     select_container "Select MySQL container to load data into. "
     TARGET_CONTAINER="$CONTAINER"
 
@@ -618,18 +621,18 @@ cmd_dbload() {
     fi
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
-    printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
+    printf "${TEXT_GRAY_500}DB_IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_IMAGE_NAME"
     printf "${TEXT_GRAY_500}DB_DATABASE: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_DATABASE"
     printf "${TEXT_GRAY_500}DB_USERNAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n\n\n" "$DB_USERNAME"
 
-    confirmation "You are about to load the mysqldump file on the container image '${IMAGE_NAME}' into the database in the container '${CONTAINER}'"
+    confirmation "You are about to load the mysqldump file on the container image '${DB_IMAGE_NAME}' into the database in the container '${CONTAINER}'"
     spin "vump_dbload" "Loading" "vump_dbload"
 
 }
 
 function vump_dbload()
 {
-    vump --dbload --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $IMAGE_NAME
+    vump --dbload --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $DB_IMAGE_NAME
 
 }
 
@@ -660,6 +663,25 @@ function push_to_registry()
 
     printf "\n"
 
+    # Tag :IMAGE_ID
+    if ! docker image tag ${REPOSITORY_NAME}/${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
+        exit 1
+    fi
+
+    # Push :IMAGE_ID
+    PUSH_IMAGE="${IMAGE_NAME}"
+    PUSH_TAG="${IMAGE_ID}"
+    spin "docker_push_to_registry" "pushing :${IMAGE_ID} to registry" "push to registry"
+
+    # Delete from local images
+    if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID}.\n"
+        exit 1
+    fi
+
     # Tag :Latest
     if ! docker image tag ${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
     then
@@ -672,17 +694,12 @@ function push_to_registry()
     PUSH_TAG="latest"
     spin "docker_push_to_registry" "pushing :latest to registry" "push to registry"
 
-    # Tag :IMAGE_ID
-    if ! docker image tag ${REPOSITORY_NAME}/${IMAGE_NAME}:latest ${REPOSITORY_NAME}/${IMAGE_NAME}:${IMAGE_ID};
+    # Delete from local images
+    if ! docker image rm ${REPOSITORY_NAME}/${IMAGE_NAME}:latest;
     then
-        printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${REPOSITORY_NAME}/${IMAGE_NAME}:latest.\n"
         exit 1
     fi
-
-    # Push :IMAGE_ID
-    PUSH_IMAGE="${IMAGE_NAME}"
-    PUSH_TAG="${IMAGE_ID}"
-    spin "docker_push_to_registry" "pushing :${IMAGE_ID} to registry" "push to registry"
 }
 
 
