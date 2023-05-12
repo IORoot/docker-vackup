@@ -5,7 +5,6 @@
 # ║                                                                              ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
-
 REPOSITORY_NAME=""
 
 # Deine all spinnaker icons / colours
@@ -55,7 +54,7 @@ function stylesheet()
     BORDER_RED_400='\e[38;2;248;113;113m'
 }
 
-# Source any Variables in a .env file.
+# Override and Source any Variables in a .env file.
 set -o allexport
 source .env set
 +o allexport
@@ -527,12 +526,21 @@ function cmd_dbsave() {
     CONTAINER="$CONTAINER"
     ask_question "Name to give backup image? "
     IMAGE_NAME="$ANSWER"
-    ask_question "database username? "
-    DB_USERNAME="$ANSWER"
-    ask_question "$DB_USERNAME database password? "
-    DB_PASSWORD="$ANSWER"
-    select_database "Select database to backup. "
-    DB_DATABASE="$DB_DATABASE"
+
+    if [ -z ${DB_USERNAME+x} ]; then 
+        ask_question "database username? "
+        DB_USERNAME="$ANSWER"
+    fi
+
+    if [ -z ${DB_PASSWORD+x} ]; then
+        ask_question "$DB_USERNAME database password? "
+        DB_PASSWORD="$ANSWER"
+    fi
+
+    if [ -z ${DB_DATABASE+x} ]; then
+        select_database "Select database to backup. "
+        DB_DATABASE="$DB_DATABASE"
+    fi
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
     printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
@@ -593,12 +601,21 @@ cmd_dbload() {
     IMAGE_NAME="$IMAGE"
     select_container "Select MySQL container to load data into. "
     TARGET_CONTAINER="$CONTAINER"
-    ask_question "Name of database to load? "
-    DB_DATABASE="$ANSWER"
-    ask_question "database username? "
-    DB_USERNAME="$ANSWER"
-    ask_question "$DB_USERNAME database password? "
-    DB_PASSWORD="$ANSWER"
+
+    if [ -z ${DB_DATABASE+x} ]; then
+        ask_question "Name of database to load? "
+        DB_DATABASE="$ANSWER"
+    fi
+
+    if [ -z ${DB_USERNAME+x} ]; then 
+        ask_question "database username? "
+        DB_USERNAME="$ANSWER"
+    fi
+
+    if [ -z ${DB_PASSWORD+x} ]; then
+        ask_question "$DB_USERNAME database password? "
+        DB_PASSWORD="$ANSWER"
+    fi
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
     printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
