@@ -651,7 +651,7 @@ function vump_dbload()
 function push_to_registry()
 {
     clear
-
+    IMAGE_NAME="$DB_IMAGE_NAME"
     IMAGE_ID=$(docker image ls -q --filter reference=${IMAGE_NAME})
 
     printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
