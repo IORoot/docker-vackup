@@ -682,12 +682,12 @@ function main()
             ;;
 
         dbsave)
-            echo "running dbsave. container: ${CONTAINER}. image name: ${IMAGE}. database: ${DATABASE}. user/pass: ${USERNAME}/${PASSWORD}" 
+            echo "running dbsave. container: ${CONTAINER}. image name: ${IMAGE}. database: ${DATABASE}. user/pass: ${USERNAME}/###" 
             cmd_dbsave ${CONTAINER} ${IMAGE} ${DATABASE} ${USERNAME} ${PASSWORD}
             ;;
 
         dbload)
-            echo "running dbload. image name: ${IMAGE}. container: ${CONTAINER}. database: ${DATABASE}. user/pass: ${USERNAME}/${PASSWORD}" 
+            echo "running dbload. image name: ${IMAGE}. container: ${CONTAINER}. database: ${DATABASE}. user/pass: ${USERNAME}/###" 
             cmd_dbload ${IMAGE} ${CONTAINER} ${DATABASE} ${USERNAME} ${PASSWORD}
             ;;
 
