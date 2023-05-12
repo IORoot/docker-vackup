@@ -603,6 +603,7 @@ cmd_dbload() {
 
     confirmation "You are about to load the mysqldump file on the container image '${IMAGE_NAME}' into the database in the container '${CONTAINER}'"
     spin "vump_dbload" "Loading" "vump_dbload"
+
 }
 
 function vump_dbload()
