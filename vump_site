@@ -218,7 +218,7 @@ function cmd_run_export_registry()
     # ╭──────────────────────────────────────────────────────────╮
     # │                    EXPORT TO REGISTRY                    │
     # ╰──────────────────────────────────────────────────────────╯
-    # push_to_registry
+    push_to_registry
 }
 
 
