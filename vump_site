@@ -106,7 +106,7 @@ function mainmenu()
                     "title_style": "",
                     "description": "Backup docker website code, assets and database.",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_export_registry; exit",
+                    "command": "cmd_export_registry; push_to_registry; exit",
                     "bullet": "BORDER_SKY_400"
                 },
                 {
@@ -218,7 +218,7 @@ function cmd_run_export_registry()
     # ╭──────────────────────────────────────────────────────────╮
     # │                    EXPORT TO REGISTRY                    │
     # ╰──────────────────────────────────────────────────────────╯
-    push_to_registry
+    
 }
 
 
