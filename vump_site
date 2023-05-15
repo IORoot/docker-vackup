@@ -1,0 +1,300 @@
+#!/bin/bash
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                                                                              │
+# │                                  VUMP SITE                                   │
+# │                            Web files and Database                            │
+# │                                                                              │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+
+# Deine all spinnaker icons / colours
+function stylesheet()
+{
+    TEXT_WHITE_FFF='\e[38;2;255;255;255m'
+    TEXT_STONE_500='\e[38;2;120;113;108m'
+    TEXT_STONE_600='\e[38;2;87;83;78m'
+    TEXT_ORANGE_500='\e[38;2;249;115;22m'
+    TEXT_YELLOW_500='\e[38;2;234;179;8m'
+    TEXT_GRAY_200='\e[38;2;229;231;235m'
+    TEXT_GRAY_400='\e[38;2;156;163;175m'
+    TEXT_GRAY_500='\e[38;2;107;114;128m'
+    TEXT_GRAY_600='\e[38;2;75;85;99m'
+    TEXT_GRAY_700='\e[38;2;55;65;81m'
+    TEXT_VIOLET_500='\e[38;2;139;92;246m'
+    TEXT_RED_500='\e[38;2;239;68;68m'
+    TEXT_GREEN_500='\e[38;2;34;197;94m'
+    TEXT_EMERALD_500='\e[38;2;16;185;129m'
+    TEXT_TEAL_500='\e[38;2;20;184;166m'
+    TEXT_SKY_500='\e[38;2;14;165;233m'
+    TEXT_AMBER_500='\e[38;2;245;158;11m'
+    RESET_TEXT='\e[39m'
+    RESET_ALL='\e[0m\e[39m\e[49m\033[0m\033[K'
+    ICON_FADE_200=░
+    ICON_CMD=⌘
+    ICON_ARROW_N=↑
+    ICON_ARROW_S=↓
+    ICON_ARROW_E=→
+    ICON_ARROW_W=←
+    ICON_CIRCLE=●
+    ICON_TICK=✅
+    ICON_CROSS=❌
+    BORDER_SKY_400='\e[38;2;56;189;248m'
+    BORDER_EMERALD_400='\e[38;2;52;211;153m'
+    BORDER_PINK_400='\e[38;2;244;114;182m'
+    BORDER_ROSE_400='\e[38;2;251;113;133m'
+    BORDER_FUCHSIA_400='\e[38;2;232;121;249m'
+    BORDER_PURPLE_400='\e[38;2;192;132;252m'
+    BORDER_INDIGO_400='\e[38;2;129;140;248m'
+    BORDER_BLUE_400='\e[38;2;96;165;250m'
+    BORDER_CYAN_400='\e[38;2;34;211;238m'
+    BORDER_TEAL_400='\e[38;2;45;212;191m'
+    BORDER_GREEN_400='\e[38;2;74;222;128m'
+    BORDER_YELLOW_400='\e[38;2;250;204;21m'
+    BORDER_ORANGE_400='\e[38;2;251;146;60m'
+    BORDER_RED_400='\e[38;2;248;113;113m'
+}
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                                                          │
+# │                      Read .env file                      │
+# │                                                          │
+# ╰──────────────────────────────────────────────────────────╯
+set -o allexport
+source .env 
+set +o allexport
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                        UTILITIES                         │
+# ╰──────────────────────────────────────────────────────────╯
+
+function tar_zip_folder()
+{
+    tar -cvzf ${FILE_EXPORT_NAME} ./vump_backup
+}
+
+source ./inc/registry_functions
+source ./inc/docker_questions
+source ./inc/menu_builder
+source ./inc/spinner
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                                MENU FUNCTIONS                                ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+function mainmenu()
+{
+    
+    MENU='
+        {
+        "select": {
+            "heading": "'${TEXT_YELLOW_500}'Select the task to perform.",
+            "clear": true,
+            "clear_before_command": true,
+            "icon": "ICON_FADE_200",
+            "hide_message": true,
+            "display_help": true,
+            "reset_loop": false,
+            "previous_step": "exit",
+            "options": [
+                {
+                    "title": "Save ⏩ to container registry",
+                    "title_style": "",
+                    "description": "Backup docker website code, assets and database.",
+                    "description_style": "TEXT_GRAY_500",
+                    "command": "cmd_export_registry; exit",
+                    "bullet": "BORDER_SKY_400"
+                },
+                {
+                    "title": "Load ⏪ from container registry",
+                    "title_style": "",
+                    "description": "Recover docker website code, assets and database.",
+                    "description_style": "TEXT_GRAY_500",
+                    "command": "cmd_import_registry; exit",
+                    "bullet": "BORDER_EMERALD_400"
+                }
+            ]
+        }
+    }'
+    menu "$MENU"
+
+}
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                            MAIN EXPORT FUNCTIONS                             ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                   EXPORT TO REGISTRY                     │
+# ╰──────────────────────────────────────────────────────────╯
+function cmd_export_registry() {
+    clear
+
+    if [ -z ${WEBSITE_VOLUME_NAME+x} ]; then 
+        select_volume "Select WEBSITE volume to export data from [.env WEBSITE_VOLUME_NAME]"
+        WEBSITE_VOLUME_NAME="$VOLUME"
+    fi
+
+    if [ -z ${DATABASE_CONTAINER_NAME+x} ]; then 
+        select_container "Select DATABASE container to export data from [.env DATABASE_CONTAINER_NAME]"
+        DATABASE_CONTAINER_NAME="$CONTAINER"
+    fi
+
+    if [ -z ${DB_USERNAME+x} ]; then 
+        ask_question "database username?  [.env DB_USERNAME]"
+        DB_USERNAME="$ANSWER"
+    fi
+
+    if [ -z ${DB_PASSWORD+x} ]; then
+        ask_question "$DB_USERNAME database password? [.env DB_PASSWORD]"
+        DB_PASSWORD="$ANSWER"
+    fi
+
+    if [ -z ${DB_DATABASE+x} ]; then
+        select_database "Select database to backup. [.env DB_DATABASE]"
+        DB_DATABASE="$DB_DATABASE"
+    fi
+
+    if [ -z ${IMAGE_NAME+x} ]; then 
+        ask_question "Name of container image to export to? [.env IMAGE_NAME]"
+        IMAGE_NAME="$ANSWER"
+    fi
+
+    if [ -z ${REGISTRY_REPO+x} ]; then 
+        ask_question "Container registry to export to? [.env REGISTRY_REPO]"
+        REGISTRY_REPO="$ANSWER"
+    fi
+
+
+    printf "The website data from '${WEBSITE_VOLUME_NAME}' will be in /volume-data/\n"
+    printf "The database data from '${DATABASE_CONTAINER_NAME}' will be in /db-data/\n\n"
+    confirmation "You are going to export '${WEBSITE_VOLUME_NAME}' and '${DATABASE_CONTAINER_NAME}' to registry ${REGISTRY_REPO}"
+    spin "cmd_run_export_registry" "Exporting" "export_registry" 
+
+}
+
+
+function cmd_run_export_registry()
+{
+
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                         DATABASE                         │
+    # ╰──────────────────────────────────────────────────────────╯
+
+    vump --dbfile --container $DATABASE_CONTAINER_NAME --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --filename backup.sql
+
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                         WEBSITE                          │
+    # ╰──────────────────────────────────────────────────────────╯
+
+    vump --save --volume $WEBSITE_VOLUME_NAME --image $IMAGE_NAME
+
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                    COPY DB INTO IMAGE                    │
+    # ╰──────────────────────────────────────────────────────────╯
+    if ! docker run\
+        -v "$PWD":/mount-pwd \
+        $IMAGE_NAME \
+        /bin/sh -c "mkdir -p /db-data/ && cp -p /mount-pwd/backup.sql /db-data/backup.sql";
+    then
+        echo "Error: Failed to copy DB into container"
+        exit 1
+    fi
+
+    CONTAINER_ID=$(docker ps -lq)
+
+    docker commit -m "Saving website container" "$CONTAINER_ID" "$IMAGE_NAME"
+
+    docker container rm "$CONTAINER_ID"
+
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                    EXPORT TO REGISTRY                    │
+    # ╰──────────────────────────────────────────────────────────╯
+    # push_to_registry
+}
+
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                            MAIN IMPORT FUNCTIONS                             ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                   IMPORT TO REGISTRY                     │
+# ╰──────────────────────────────────────────────────────────╯
+function cmd_import_registry() {
+    clear
+
+    if [ -z ${REGISTRY_REPO+x} ]; then 
+        ask_question "Container registry to import from? [.env REGISTRY_REPO]"
+        REGISTRY_REPO="$ANSWER"
+    fi
+
+    if [ -z ${PULL_TAG+x} ]; then 
+        ask_question "Which image :tag to pull? [.env PULL_TAG]"
+        PULL_TAG="$ANSWER"
+    fi
+
+    if [ -z ${WEBSITE_VOLUME_NAME+x} ]; then 
+        select_volume "Select WEBSITE volume to export data from [.env WEBSITE_VOLUME_NAME]"
+        WEBSITE_VOLUME_NAME="$VOLUME"
+    fi
+
+    if [ -z ${DATABASE_CONTAINER_NAME+x} ]; then 
+        select_container "Select DATABASE container to export data from [.env DATABASE_CONTAINER_NAME]"
+        DATABASE_CONTAINER_NAME="$CONTAINER"
+    fi
+
+    if [ -z ${DB_USERNAME+x} ]; then 
+        ask_question "database username?  [.env DB_USERNAME]"
+        DB_USERNAME="$ANSWER"
+    fi
+
+    if [ -z ${DB_PASSWORD+x} ]; then
+        ask_question "$DB_USERNAME database password? [.env DB_PASSWORD]"
+        DB_PASSWORD="$ANSWER"
+    fi
+
+    if [ -z ${DB_DATABASE+x} ]; then
+        select_database "Select database to backup. [.env DB_DATABASE]"
+        DB_DATABASE="$DB_DATABASE"
+    fi
+
+    printf "The website data in /volume-data/ will be put into the '${WEBSITE_VOLUME_NAME}' volume.\n"
+    printf "The database data in /db-data/ will be loaded into the '${DATABASE_CONTAINER_NAME}' container.\n\n"
+    confirmation "Website backup from '${REGISTRY_REPO}' will be loaded into '${DATABASE_CONTAINER_NAME}' DB container and ${WEBSITE_VOLUME_NAME} website volume."
+    
+    cmd_run_import_registry
+
+}
+
+function cmd_run_import_registry()
+{
+    
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                    PULL FROM REGISTRY                    │
+    # ╰──────────────────────────────────────────────────────────╯
+    pull_from_registry
+
+    vump --load --image $REGISTRY_REPO:$PULL_TAG --volume $WEBSITE_VOLUME_NAME
+
+    vump --dbload --image $REGISTRY_REPO:$PULL_TAG --container $DATABASE_CONTAINER_NAME --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD
+    rm ./backup.sql
+
+
+}
+
+
+stylesheet
+mainmenu

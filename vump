@@ -30,7 +30,7 @@ set +o allexport
 # ╰──────────────────────────────────────────────────────────╯
 
 # Remove the backup.sql file on exit.
-trap "rm -f ./backup.sql" EXIT
+# trap "rm -f ./backup.sql" EXIT
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                          Usage.                          │
@@ -158,6 +158,12 @@ function arguments()
 
         -ds|--dbsave)
             COMMAND="dbsave"
+            shift
+            ;;
+
+
+        -df|--dbfile)
+            COMMAND="dbfile"
             shift
             ;;
 
@@ -575,6 +581,71 @@ function cmd_dbsave()
 }
 
 # ╭──────────────────────────────────────────────────────────╮
+# │                          DBFILE                          │
+# ╰──────────────────────────────────────────────────────────╯
+#
+# 1. Run DB Container (with DB volume mounted)
+# 2. MySQLDump database to current folder
+#
+#                                 ┌─────────────────────────┐
+#                                 │     MySQL Container     │
+# ┌──────────────────┐            │                         │
+# │     DB Volume    │── mount ───┼───────▶ mysqldump       │
+# └──────────────────┘            │             │           │
+# ┌──────────────────┐            │ ┌───────────▼─────────┐ │
+# │   ./backup.sql   │◀─── cp ────┼─│   /tmp/backup.sql   │ │
+# └──────────────────┘            │ └─────────────────────┘ │
+#                                 └─────────────────────────┘
+#
+function cmd_dbfile() 
+{
+    CONTAINER="$1"
+    DB_DATABASE="$2"
+    DB_USERNAME="$3"
+    DB_PASSWORD="$4"
+    FILENAME="$5"
+
+    # Check parameters are set
+    if [ -z "$CONTAINER" ] || [ -z "$DB_USERNAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ] || [ -z "$FILENAME" ] ; then
+        echo "Error: Not enough arguments for dbfile"
+        usage
+        exit 1
+    fi
+
+    # Check docker container exists
+    if ! docker ps -a | grep "$CONTAINER" > /dev/null 2>&1; 
+    then
+        echo "Error: Container $CONTAINER does not exist"
+        exit 1
+    fi
+
+    # Check docker container has mysql
+    if ! docker exec $CONTAINER \
+        mysqldump --version > /dev/null 2>&1; 
+    then
+        echo "Error: Container $CONTAINER does not have a MySQL database"
+        exit 1
+    fi
+
+    # Dump Database to /tmp
+    if ! docker exec $CONTAINER \
+        mysqldump -u$DB_USERNAME -p$DB_PASSWORD --single-transaction $DB_DATABASE > /tmp/backup.sql > /dev/null 2>&1;
+    then
+        echo "Error: Failed to dump database to /tmp/backup.sql"
+        exit 1
+    fi
+
+    # Copy backup file out of container
+    if ! docker cp $CONTAINER:/tmp/backup.sql ${FILENAME};
+    then
+        echo "Error: Unable to copy $CONTAINER:/tmp/backup.sql to current folder."
+        exit 1
+    fi
+
+    printf "${TEXT_EMERALD_500}Successfully copied DB in container $CONTAINER into backup.sql file\n"}
+}
+
+# ╭──────────────────────────────────────────────────────────╮
 # │                          DBLOAD                          │
 # ╰──────────────────────────────────────────────────────────╯
 #
@@ -686,9 +757,14 @@ function main()
             cmd_dbsave ${CONTAINER} ${IMAGE} ${DATABASE} ${USERNAME} ${PASSWORD}
             ;;
 
+        dbfile)
+            echo "running dbfile. container: ${CONTAINER}. database: ${DATABASE}. user/pass: ${USERNAME}/###" 
+            cmd_dbfile ${CONTAINER} ${DATABASE} ${USERNAME} ${PASSWORD} ${FILENAME}
+            ;;
+
         dbload)
             echo "running dbload. image name: ${IMAGE}. container: ${CONTAINER}. database: ${DATABASE}. user/pass: ${USERNAME}/###" 
-            cmd_dbload ${IMAGE} ${CONTAINER} ${DATABASE} ${USERNAME} ${PASSWORD}
+            cmd_dbload ${IMAGE} ${CONTAINER} ${DATABASE} ${USERNAME} ${PASSWORD} 
             ;;
 
         *)

@@ -1,0 +1,239 @@
+
+# ╭──────────────────────────────────────────────────────────╮
+# │          Select a docker container from a list           │
+# ╰──────────────────────────────────────────────────────────╯
+function select_container()
+{
+    
+    QUESTION="$1"
+
+    LIST_OF_CONTAINERS=$(docker container ls -a --format='{{.ID}} {{.Names}} {{.Image}}')
+
+    MENU='
+        {
+        "select": {
+            "heading": "'${BORDER_YELLOW_400}${QUESTION}'",
+            "clear": true,
+            "clear_before_command": true,
+            "icon": "ICON_FADE_200",
+            "hide_message": true,
+            "display_help": true,
+            "reset_loop": false,
+            "previous_step": "mainmenu",
+            "options": ['
+
+    LOOP=1
+    while IFS= read -r line; do
+
+        CONTAINER_ID=$(echo $line | head -n1 | cut -d " " -f1 | xargs )
+        CONTAINER_NAME=$(echo $line | head -n1 | cut -d " " -f2 | xargs )
+        CONTAINER_IMAGE=$(echo $line | head -n1 | cut -d " " -f3 | xargs )
+
+        MENU+='
+                {
+                    "title": "'${CONTAINER_NAME}'",
+                    "title_style": "",
+                    "description": "'${TEXT_GRAY_700}${CONTAINER_ID}' '${TEXT_GRAY_600}${CONTAINER_NAME}'",
+                    "description_style": "TEXT_GRAY_500",
+                    "command": "CONTAINER=\"'${CONTAINER_NAME}'\" ",
+                    "bullet": "BORDER_FUCHSIA_400"
+                },'
+
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_CONTAINERS"
+
+    MENU+='
+            ]
+        }
+    }'
+    
+    menu "$MENU"
+}
+
+# ╭──────────────────────────────────────────────────────────╮
+# │             Select a docker volume from list             │
+# ╰──────────────────────────────────────────────────────────╯
+function select_volume()
+{
+
+    QUESTION="$1"
+
+    LIST_OF_VOLUMES=$(docker volume ls --format='{{lower .Name}} {{lower .Mountpoint}}')
+
+    MENU='
+        {
+        "select": {
+            "heading": "'${BORDER_YELLOW_400}${QUESTION}'.",
+            "clear": true,
+            "clear_before_command": true,
+            "icon": "ICON_FADE_200",
+            "hide_message": true,
+            "display_help": true,
+            "reset_loop": false,
+            "previous_step": "mainmenu",
+            "options": ['
+
+    LOOP=1
+    while IFS= read -r line; do
+
+        VOLUME_NAME=$(echo $line | head -n1 | cut -d " " -f1 | xargs )
+        VOLUME_MOUNTPOINT=$(echo $line | head -n1 | cut -d " " -f2 | xargs )
+
+        MENU+='
+                {
+                    "title": "'${VOLUME_NAME}'",
+                    "title_style": "",
+                    "description": "Mountpoint: '${VOLUME_MOUNTPOINT}'",
+                    "description_style": "TEXT_GRAY_500",
+                    "command": "VOLUME=\"'${VOLUME_NAME}'\" ",
+                    "bullet": "BORDER_SKY_400"
+                },'
+
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_VOLUMES"
+
+    MENU+='
+            ]
+        }
+    }'
+    
+    menu "$MENU"
+
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │              Select a docker image for list              │
+# ╰──────────────────────────────────────────────────────────╯
+function select_image()
+{
+
+    QUESTION="$1"
+
+    LIST_OF_IMAGES=$(docker image ls --format='{{lower .ID}} {{lower .Repository}} {{lower .Size}} {{lower .Tag}}')
+
+    MENU='
+        {
+        "select": {
+            "heading": "'${BORDER_YELLOW_400}${QUESTION}'",
+            "clear": true,
+            "clear_before_command": true,
+            "icon": "ICON_FADE_200",
+            "hide_message": true,
+            "display_help": true,
+            "reset_loop": false,
+            "previous_step": "mainmenu",
+            "options": ['
+
+    LOOP=1
+    while IFS= read -r line; do
+
+        IMAGE_ID=$(echo $line | head -n1 | cut -d " " -f1 | xargs )
+        IMAGE_REPOSITORY=$(echo $line | head -n1 | cut -d " " -f2 | xargs )
+        IMAGE_SIZE=$(echo $line | head -n1 | cut -d " " -f3 | xargs )
+        IMAGE_TAG=$(echo $line | head -n1 | cut -d " " -f4 | xargs )
+
+        MENU+='
+                {
+                    "title": "'${IMAGE_REPOSITORY}'",
+                    "title_style": "",
+                    "description": "ID: '${TEXT_GRAY_500}${IMAGE_ID}${TEXT_GRAY_700}' TAG: '${TEXT_GRAY_500}${IMAGE_TAG}${TEXT_GRAY_700}' SIZE: '${TEXT_GRAY_500}${IMAGE_SIZE}${TEXT_GRAY_700}'",
+                    "description_style": "TEXT_GRAY_700",
+                    "command": "IMAGE=\"'${IMAGE_ID}'\" ",
+                    "bullet": "TEXT_GREEN_500"
+                },'
+
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_IMAGES"
+
+    MENU+='
+            ]
+        }
+    }'
+    
+    menu "$MENU"
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │           Select a docker database from a list           │
+# ╰──────────────────────────────────────────────────────────╯
+function select_database()
+{
+    QUESTION="$1"
+
+    LIST_OF_DATABASES=$(docker exec $CONTAINER mysql -u$DB_USERNAME -p$DB_PASSWORD --silent --execute="show databases;" )
+
+    MENU='
+        {
+        "select": {
+            "heading": "'${BORDER_YELLOW_400}${QUESTION}'.",
+            "clear": true,
+            "clear_before_command": true,
+            "icon": "ICON_FADE_200",
+            "hide_message": true,
+            "display_help": true,
+            "reset_loop": false,
+            "previous_step": "mainmenu",
+            "options": ['
+
+    LOOP=1
+    while IFS= read -r line; do
+
+        MENU+='
+                {
+                    "title": "'${line}'",
+                    "title_style": "",
+                    "description": "Option '${LOOP}'",
+                    "description_style": "TEXT_GRAY_500",
+                    "command": "DB_DATABASE=\"'${line}'\" ",
+                    "bullet": "BORDER_TEAL_400"
+                },'
+
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_DATABASES"
+
+    MENU+='
+            ]
+        }
+    }'
+    
+    menu "$MENU"
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                      Ask a question                      │
+# ╰──────────────────────────────────────────────────────────╯
+function ask_question()
+{
+
+    QUESTION=$1
+
+    printf "${BORDER_YELLOW_400}%s${RESET_TEXT}\n\n " "$QUESTION"
+
+    printf "${TEXT_SKY_500}"
+    read -p "${ICON_FADE_200} " ANSWER
+    printf "${RESET_TEXT}\n"
+}
+
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                  Check Y/n to continue                   │
+# ╰──────────────────────────────────────────────────────────╯
+function confirmation()
+{
+    QUESTION=$1
+    printf "${TEXT_AMBER_500} %s ${RESET_TEXT}\n" "$QUESTION"
+    read -r -p "Are you sure? [y/N] " response
+    case "$response" in
+        [yY][eE][sS]|[yY]) 
+            CONFIRM="YES"
+            ;;
+        *)
+            CONFIRM=""
+            exit
+            ;;
+    esac
+}
