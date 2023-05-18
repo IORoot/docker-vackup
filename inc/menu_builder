@@ -97,7 +97,9 @@ function select_option {
     ref_to_ref_to_content()   {
         VARNAME=$1
         REFERENCE=${!VARNAME}
-        OUTPUTNEW=${!REFERENCE}
+        if [ ! -z ${REFERENCE} ]; then
+            OUTPUTNEW=${!REFERENCE}
+        fi
         echo "${OUTPUTNEW}"
     }
 
