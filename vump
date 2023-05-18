@@ -689,10 +689,14 @@ cmd_dbload() {
     DB_USERNAME="$4"
     DB_PASSWORD="$5"
 
-    
     # Check parameters are set
-    if [ -z "$TARGET_CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
+    if [ -z "$TARGET_CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_USERNAME" ]; then
         echo "Error: Not enough arguments"
+        printf "IMAGE_NAME: %s \n" "${IMAGE_NAME}"
+        printf "TARGET_CONTAINER: %s \n" "${TARGET_CONTAINER}"
+        printf "DB_DATABASE: %s \n" "${DB_DATABASE}"
+        printf "DB_USERNAME: %s \n" "${DB_USERNAME}"
+        printf "DB_PASSWORD: %s \n" "${DB_PASSWORD}"
         usage
         exit 1
     fi
@@ -713,9 +717,11 @@ cmd_dbload() {
     fi
 
     # Load the Mysql Database
+
     if ! docker exec \
         $TARGET_CONTAINER \
-        /bin/sh -c "cat /tmp/backup.sql | /usr/bin/mysql -u$DB_USERNAME -p$DB_PASSWORD $DB_DATABASE > /dev/null 2>&1" ;
+        /bin/sh -c "sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g' /tmp/backup.sql \
+            && cat /tmp/backup.sql | /usr/bin/mysql -v -u$DB_USERNAME -p$DB_PASSWORD $DB_DATABASE > /dev/null 2>&1" ;
     then
         echo "Error: Failed to load SQL file into database."
         exit 1

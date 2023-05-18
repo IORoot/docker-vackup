@@ -162,7 +162,7 @@ function select_database()
 {
     QUESTION="$1"
 
-    LIST_OF_DATABASES=$(docker exec $CONTAINER mysql -u$DB_USERNAME -p$DB_PASSWORD --silent --execute="show databases;" )
+    LIST_OF_DATABASES=$(docker exec $VUMP_DATABASE_CONTAINER_NAME mysql -u$VUMP_DB_USERNAME -p$VUMP_DB_PASSWORD --silent --execute="show databases;" )
 
     MENU='
         {
@@ -186,7 +186,7 @@ function select_database()
                     "title_style": "",
                     "description": "Option '${LOOP}'",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "DB_DATABASE=\"'${line}'\" ",
+                    "command": "VUMP_DB_DATABASE=\"'${line}'\" ",
                     "bullet": "BORDER_TEAL_400"
                 },'
 
