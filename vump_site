@@ -1113,10 +1113,6 @@ function cmd_run_export_registry()
     docker commit -m "Saving website container" "$CONTAINER_ID" "$VUMP_IMAGE_NAME"
 
     docker container rm "$CONTAINER_ID"
-
-    # ╭──────────────────────────────────────────────────────────╮
-    # │                    EXPORT TO REGISTRY                    │
-    # ╰──────────────────────────────────────────────────────────╯
     
 }
 
