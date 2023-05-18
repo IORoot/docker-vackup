@@ -88,14 +88,13 @@ function tar_zip_folder()
 function push_to_registry()
 {
     clear
-    IMAGE_NAME="$IMAGE_NAME"
-    IMAGE_ID=$(docker image ls -q --filter reference=${IMAGE_NAME})
+    IMAGE_ID=$(docker image ls -q --filter reference=${VUMP_IMAGE_NAME})
 
     printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
 
-    printf "The image $IMAGE_NAME:latest will be pushed to the following locations:\n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$REGISTRY_REPO:latest ${RESET_TEXT} \n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$REGISTRY_REPO:$IMAGE_ID ${RESET_TEXT} \n\n"
+    printf "The image $VUMP_IMAGE_NAME:latest will be pushed to the following locations:\n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:latest ${RESET_TEXT} \n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:$IMAGE_ID ${RESET_TEXT} \n\n"
     confirmation "Do you want to push image to container registry?"
 
     printf "\n"
@@ -104,8 +103,8 @@ function push_to_registry()
     # │                    PUSH WITH :HASH_ID                    │
     # ╰──────────────────────────────────────────────────────────╯
     # Tag :IMAGE_ID
-    echo "tag  ${IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID}"
-    if ! docker image tag ${IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
+    echo "tag  ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID}"
+    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
     then
         printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
         exit 1
@@ -128,9 +127,9 @@ function push_to_registry()
     # ╰──────────────────────────────────────────────────────────╯
 
     # Tag :Latest
-    if ! docker image tag ${IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:latest;
+    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:latest;
     then
-        printf "\n${TEXT_RED_500}Error: Failed to tag image ${IMAGE_NAME}:latest as ${VUMP_REGISTRY_REPO}:latest.\n"
+        printf "\n${TEXT_RED_500}Error: Failed to tag image ${VUMP_IMAGE_NAME}:latest as ${VUMP_REGISTRY_REPO}:latest.\n"
         exit 1
     fi
 
@@ -151,7 +150,6 @@ function push_to_registry()
 # Push to the registry.
 function docker_push_to_registry()
 {
-    printf "running ${TEXT_EMERALD_500}docker push ${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG}${RESET_TEXT} to container registry.\n"
 
     if ! docker push ${VUMP_REGISTRY_REPO}:${PUSH_TAG};
     then
@@ -1005,7 +1003,7 @@ function mainmenu()
                     "title_style": "",
                     "description": "Backup docker website code, assets and database.",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_export_registry; push_to_registry; exit",
+                    "command": "cmd_export_registry; exit",
                     "bullet": "BORDER_SKY_400"
                 },
                 {
@@ -1114,6 +1112,10 @@ function cmd_run_export_registry()
 
     docker container rm "$CONTAINER_ID"
     
+    # ╭──────────────────────────────────────────────────────────╮
+    # │                Push to container registry                │
+    # ╰──────────────────────────────────────────────────────────╯
+    push_to_registry
 }
 
 
