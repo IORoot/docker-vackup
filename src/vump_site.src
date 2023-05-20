@@ -132,7 +132,9 @@ function cmd_export_registry() {
 
     printf "The website data from '${VUMP_WEBSITE_VOLUME_NAME}' will be in /volume-data/\n"
     printf "The database data from '${VUMP_DATABASE_CONTAINER_NAME}' will be in /db-data/\n\n"
+    
     confirmation "You are going to export '${VUMP_WEBSITE_VOLUME_NAME}' and '${VUMP_DATABASE_CONTAINER_NAME}' to registry ${VUMP_REGISTRY_REPO}"
+
     spin "cmd_run_export_registry" "Exporting" "export_registry" 
 
 }
