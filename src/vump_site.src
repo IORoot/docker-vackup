@@ -7,72 +7,21 @@
 # ╰──────────────────────────────────────────────────────────────────────────────╯
 
 
-
-# Deine all spinnaker icons / colours
-function stylesheet()
-{
-    TEXT_WHITE_FFF='\e[38;2;255;255;255m'
-    TEXT_STONE_500='\e[38;2;120;113;108m'
-    TEXT_STONE_600='\e[38;2;87;83;78m'
-    TEXT_ORANGE_500='\e[38;2;249;115;22m'
-    TEXT_YELLOW_500='\e[38;2;234;179;8m'
-    TEXT_GRAY_200='\e[38;2;229;231;235m'
-    TEXT_GRAY_400='\e[38;2;156;163;175m'
-    TEXT_GRAY_500='\e[38;2;107;114;128m'
-    TEXT_GRAY_600='\e[38;2;75;85;99m'
-    TEXT_GRAY_700='\e[38;2;55;65;81m'
-    TEXT_VIOLET_500='\e[38;2;139;92;246m'
-    TEXT_RED_500='\e[38;2;239;68;68m'
-    TEXT_GREEN_500='\e[38;2;34;197;94m'
-    TEXT_EMERALD_500='\e[38;2;16;185;129m'
-    TEXT_TEAL_500='\e[38;2;20;184;166m'
-    TEXT_SKY_500='\e[38;2;14;165;233m'
-    TEXT_AMBER_500='\e[38;2;245;158;11m'
-    RESET_TEXT='\e[39m'
-    RESET_ALL='\e[0m\e[39m\e[49m\033[0m\033[K'
-    ICON_FADE_200=░
-    ICON_CMD=⌘
-    ICON_ARROW_N=↑
-    ICON_ARROW_S=↓
-    ICON_ARROW_E=→
-    ICON_ARROW_W=←
-    ICON_CIRCLE=●
-    ICON_TICK=✅
-    ICON_CROSS=❌
-    BORDER_SKY_400='\e[38;2;56;189;248m'
-    BORDER_EMERALD_400='\e[38;2;52;211;153m'
-    BORDER_PINK_400='\e[38;2;244;114;182m'
-    BORDER_ROSE_400='\e[38;2;251;113;133m'
-    BORDER_FUCHSIA_400='\e[38;2;232;121;249m'
-    BORDER_PURPLE_400='\e[38;2;192;132;252m'
-    BORDER_INDIGO_400='\e[38;2;129;140;248m'
-    BORDER_BLUE_400='\e[38;2;96;165;250m'
-    BORDER_CYAN_400='\e[38;2;34;211;238m'
-    BORDER_TEAL_400='\e[38;2;45;212;191m'
-    BORDER_GREEN_400='\e[38;2;74;222;128m'
-    BORDER_YELLOW_400='\e[38;2;250;204;21m'
-    BORDER_ORANGE_400='\e[38;2;251;146;60m'
-    BORDER_RED_400='\e[38;2;248;113;113m'
-}
-
 # ╭──────────────────────────────────────────────────────────╮
 # │                                                          │
 # │                      Read .env file                      │
 # │                                                          │
 # ╰──────────────────────────────────────────────────────────╯
-set -o allexport
-source .env 
-set +o allexport
+if [ -f .env ]; then
+    set -o allexport; source .env; set +o allexport
+fi
 
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                        UTILITIES                         │
 # ╰──────────────────────────────────────────────────────────╯
 
-function tar_zip_folder()
-{
-    tar -cvzf ${VUMP_FILE_EXPORT_NAME} ./vump_backup
-}
+source ./inc/stylesheet
 
 source ./inc/registry_functions
 

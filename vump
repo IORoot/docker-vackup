@@ -21,9 +21,9 @@ if [[ "${DEBUG-0}" == "1" ]]; then set -o xtrace; fi          # DEBUG=1 will sho
 # ╰──────────────────────────────────────────────────────────╯
 
 # Source any Variables in a .env file.
-set -o allexport
-source .env 
-set +o allexport
+if [ -f .env ]; then
+    set -o allexport; source .env ; set +o allexport
+fi
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                      Trap Functions                      │

@@ -17,13 +17,6 @@ if [ -f .env ]; then
 fi
 
 
-# ╭──────────────────────────────────────────────────────────╮
-# │                        UTILITIES                         │
-# ╰──────────────────────────────────────────────────────────╯
-
-# source ./inc/stylesheet
-
-
 # Deine all spinnaker icons / colours
 function stylesheet()
 {
@@ -70,118 +63,6 @@ function stylesheet()
     BORDER_ORANGE_400='\e[38;2;251;146;60m'
     BORDER_RED_400='\e[38;2;248;113;113m'
 }
-
-# source ./inc/registry_functions
-
-# ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                                                                              ║
-# ║                              REGISTRY FUNCTIONS                              ║
-# ║                                                                              ║
-# ╚══════════════════════════════════════════════════════════════════════════════╝
-
-
-# ╭──────────────────────────────────────────────────────────╮
-# │       Push the new image to the container registry       │
-# ╰──────────────────────────────────────────────────────────╯
-function push_to_registry()
-{
-    clear
-    VUMP_IMAGE_NAME="$VUMP_IMAGE_NAME"
-    IMAGE_ID=$(docker image ls -q --filter reference=${VUMP_IMAGE_NAME})
-
-    printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
-
-    printf "The image $VUMP_IMAGE_NAME:latest will be pushed to the following locations:\n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:latest ${RESET_TEXT} \n"
-    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:$IMAGE_ID ${RESET_TEXT} \n\n"
-    confirmation "Do you want to push image to container registry?"
-
-    printf "\n"
-
-    # ╭──────────────────────────────────────────────────────────╮
-    # │                    PUSH WITH :HASH_ID                    │
-    # ╰──────────────────────────────────────────────────────────╯
-    # Tag :IMAGE_ID
-    echo "tag  ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID}"
-    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
-        exit 1
-    fi
-
-    # Push :IMAGE_ID
-    PUSH_TAG="${IMAGE_ID}"
-    spin "docker_push_to_registry" "pushing :${IMAGE_ID} to registry" "push to registry"
-
-    # Delete from local images
-    if ! docker image rm ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to remove ${VUMP_REGISTRY_REPO}:${IMAGE_ID}.\n"
-        exit 1
-    fi
-
-
-    # ╭──────────────────────────────────────────────────────────╮
-    # │                     PUSH WITH :LATEST                    │
-    # ╰──────────────────────────────────────────────────────────╯
-
-    # Tag :Latest
-    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:latest;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to tag image ${VUMP_IMAGE_NAME}:latest as ${VUMP_REGISTRY_REPO}:latest.\n"
-        exit 1
-    fi
-
-    # Push :Latest
-    PUSH_TAG="latest"
-    spin "docker_push_to_registry" "pushing :latest to registry" "push to registry"
-
-    # Delete from local images
-    if ! docker image rm ${VUMP_REGISTRY_REPO}:latest;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to remove ${VUMP_REGISTRY_REPO}:latest.\n"
-        exit 1
-    fi
-
-}
-
-
-# Push to the registry.
-function docker_push_to_registry()
-{
-    if ! docker push ${VUMP_REGISTRY_REPO}:${PUSH_TAG};
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to push ${PUSH_REGISTRY}:${PUSH_TAG} to container registry.\n"
-        exit 1
-    fi
-}
-
-
-
-
-
-# ╭──────────────────────────────────────────────────────────────────────────────╮
-# │                              PULL FROM REGISTRY                              │
-# ╰──────────────────────────────────────────────────────────────────────────────╯
-
-function pull_from_registry()
-{
-    printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
-
-    spin "docker_pull_from_registry" "importing" "Pull from registry"
-}
-
-# Pull from registry
-function docker_pull_from_registry()
-{
-    if ! docker pull ${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG};
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to pull ${PUSH_REGISTRY}:${VUMP_PULL_TAG} from container registry.\n"
-        exit 1
-    fi
-}
-
-# source ./inc/docker_questions
 
 # ╭──────────────────────────────────────────────────────────╮
 # │          Select a docker container from a list           │
@@ -370,7 +251,7 @@ function select_database()
                     "title_style": "",
                     "description": "Option '${LOOP}'",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "VUMP_DB_DATABASE=\"'${line}'\" ",
+                    "command": "DB_DATABASE=\"'${line}'\" ",
                     "bullet": "BORDER_TEAL_400"
                 },'
 
@@ -422,7 +303,6 @@ function confirmation()
     esac
 }
 
-# source ./inc/menu_builder
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║                                                                              ║
 # ║                             START - JSON MENU CODE                           ║
@@ -599,8 +479,10 @@ function select_option {
         if [[ $key = ""     ]]; then echo enter; fi; 
     }              
 
-    NEWLINE_COUNT=$(( ( $# * $HEIGHT ) ))
-    for (( c=1; c<=$NEWLINE_COUNT; c++)) ; do printf "\n" ; done
+    NEWLINE_COUNT=$(( $# * $HEIGHT ))
+    for (( c=1; c<=$NEWLINE_COUNT; c++)) ; do 
+        printf "\n" ; 
+    done
 
     local lastrow=$(get_terminal_height)                                               
     TOTAL_LINES=$(( $# * $HEIGHT ))                                                     
@@ -920,13 +802,7 @@ function menu(){
 
 }
 
-# ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                                                                              ║
-# ║                             END - JSON MENU CODE                             ║
-# ║                                                                              ║
-# ╚══════════════════════════════════════════════════════════════════════════════╝
 
-# source ./inc/spinner
 # ╭──────────────────────────────────────────────────────────────────────────────╮
 # │                                   SPINNER                                    │
 # ╰──────────────────────────────────────────────────────────────────────────────╯
@@ -1113,10 +989,7 @@ function cmd_run_export_registry()
 
     docker container rm "$CONTAINER_ID"
 
-    # ╭──────────────────────────────────────────────────────────╮
-    # │                    EXPORT TO REGISTRY                    │
-    # ╰──────────────────────────────────────────────────────────╯
-    
+    rm backup.sql
 }
 
 
@@ -1179,18 +1052,117 @@ function cmd_import_registry() {
 
 function cmd_run_import_registry()
 {
-    
-    # ╭──────────────────────────────────────────────────────────╮
-    # │                    PULL FROM REGISTRY                    │
-    # ╰──────────────────────────────────────────────────────────╯
     pull_from_registry
 
     vump --load --image $VUMP_REGISTRY_REPO:$VUMP_PULL_TAG --volume $VUMP_WEBSITE_VOLUME_NAME
 
     vump --dbload --image $VUMP_REGISTRY_REPO:$VUMP_PULL_TAG --container $VUMP_DATABASE_CONTAINER_NAME --database $VUMP_DB_DATABASE --username $VUMP_DB_USERNAME --password $VUMP_DB_PASSWORD
+    
     rm ./backup.sql
+}
 
 
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                              REGISTRY FUNCTIONS                              ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │       Push the new image to the container registry       │
+# ╰──────────────────────────────────────────────────────────╯
+function push_to_registry()
+{
+    clear
+    IMAGE_ID=$(docker image ls -q --filter reference=${VUMP_IMAGE_NAME})
+
+    printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
+
+    printf "The image $VUMP_IMAGE_NAME:latest will be pushed to the following locations:\n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:latest ${RESET_TEXT} \n"
+    printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:$IMAGE_ID ${RESET_TEXT} \n\n"
+    confirmation "Do you want to push image to container registry?"
+
+    printf "\n"
+
+    # Tag :IMAGE_ID
+    echo "tag  ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID}"
+    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to tag image with image ID.\n"
+        exit 1
+    fi
+
+    # Push :IMAGE_ID
+    PUSH_TAG="${IMAGE_ID}"
+    spin "docker_push_to_registry" "pushing :${IMAGE_ID} to registry" "push to registry"
+
+    # Delete from local images
+    if ! docker image rm ${VUMP_REGISTRY_REPO}:${IMAGE_ID};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${VUMP_REGISTRY_REPO}:${IMAGE_ID}.\n"
+        exit 1
+    fi
+
+
+
+    # Tag :Latest
+    if ! docker image tag ${VUMP_IMAGE_NAME}:latest ${VUMP_REGISTRY_REPO}:latest;
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to tag image ${VUMP_IMAGE_NAME}:latest as ${VUMP_REGISTRY_REPO}:latest.\n"
+        exit 1
+    fi
+
+    # Push :Latest
+    PUSH_TAG="latest"
+    spin "docker_push_to_registry" "pushing :latest to registry" "push to registry"
+
+    # Delete from local images
+    if ! docker image rm ${VUMP_REGISTRY_REPO}:latest;
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to remove ${VUMP_REGISTRY_REPO}:latest.\n"
+        exit 1
+    fi
+
+}
+
+# Push to the registry.
+function docker_push_to_registry()
+{
+
+    if ! docker push ${VUMP_REGISTRY_REPO}:${PUSH_TAG};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to push ${VUMP_REGISTRY_REPO}:${PUSH_TAG} to container registry.\n"
+        exit 1
+    fi
+}
+
+
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                              PULL FROM REGISTRY                              │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+
+function pull_from_registry()
+{
+    printf "${TEXT_RED_500} (you must be logged in with 'docker login' or 'az login acr')${RESET_TEXT}\n\n"
+
+    spin "docker_pull_from_registry" "importing" "Pull from registry"
+}
+
+# Pull from registry
+function docker_pull_from_registry()
+{
+
+    printf "running ${TEXT_EMERALD_500}docker pull ${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG}${RESET_TEXT} from container registry.\n"
+
+    if ! docker pull ${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG};
+    then
+        printf "\n${TEXT_RED_500}Error: Failed to pull ${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG} from container registry.\n\n"
+        exit 1
+    fi
 }
 
 
