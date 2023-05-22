@@ -108,6 +108,13 @@ usage()
         ./vump --dbsave --container [container] --image [name_of_image] --database [database_name] --username [database_username] --password [database_password]
 
 
+        DBFILE
+        ------
+        Used on mysql containers. Save the contents of the SQL file in a simple tar.gz file on the host.
+        
+        ./vump --dbfile --container [container] --database [database_name] --username [database_username] --password [database_password]
+
+        
         DBLOAD
         ------
         Used on mysql containers. Loads the contents of the SQL file in a database backup image into the container MySQL.
