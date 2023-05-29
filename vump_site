@@ -413,7 +413,7 @@ function ask_question()
 function confirmation()
 {
     QUESTION=$1
-    printf "${TEXT_AMBER_500} %s ${RESET_TEXT}\n" "$QUESTION"
+    printf "${TEXT_AMBER_500}%s${RESET_TEXT}\n\n" "$QUESTION"
     read -r -p "Are you sure? [y/N] " response
     case "$response" in
         [yY][eE][sS]|[yY]) 
@@ -1078,10 +1078,10 @@ function cmd_export_registry() {
     fi
 
 
-    printf "The website data from '${VUMP_WEBSITE_VOLUME_NAME}' will be in /volume-data/\n"
-    printf "The database data from '${VUMP_DATABASE_CONTAINER_NAME}' will be in /db-data/\n\n"
+    printf "The website data from ${TEXT_VIOLET_500}%s${RESET_TEXT} will be in ${TEXT_TEAL_500}%s${RESET_TEXT} \n" "${VUMP_WEBSITE_VOLUME_NAME}" "/volume-data/"
+    printf "The database data from ${TEXT_VIOLET_500}%s${RESET_TEXT} will be in ${TEXT_TEAL_500}%s${RESET_TEXT} \n\n" "${VUMP_DATABASE_CONTAINER_NAME}" "/db-data/"
     
-    confirmation "You are going to export '${VUMP_WEBSITE_VOLUME_NAME}' and '${VUMP_DATABASE_CONTAINER_NAME}' to registry ${VUMP_REGISTRY_REPO}"
+    confirmation "You are going to export to registry: ${VUMP_REGISTRY_REPO}"
 
     spin "cmd_run_export_registry" "Exporting" "export_registry" 
 
@@ -1094,18 +1094,19 @@ function cmd_run_export_registry()
     # ╭──────────────────────────────────────────────────────────╮
     # │                         DATABASE                         │
     # ╰──────────────────────────────────────────────────────────╯
-
+    printf "\n\nExtracting database ${TEXT_VIOLET_500}%s${RESET_TEXT} from container ${TEXT_VIOLET_500}%s${RESET_TEXT}\n\n" "${VUMP_DB_DATABASE}" "${VUMP_DATABASE_CONTAINER_NAME}"
     vump --dbfile --container $VUMP_DATABASE_CONTAINER_NAME --database $VUMP_DB_DATABASE --username $VUMP_DB_USERNAME --password $VUMP_DB_PASSWORD --filename backup.sql
 
     # ╭──────────────────────────────────────────────────────────╮
     # │                         WEBSITE                          │
     # ╰──────────────────────────────────────────────────────────╯
-
+    printf "\n\nExtracting website code from volume ${TEXT_VIOLET_500}%s${RESET_TEXT}\n\n" "${VUMP_WEBSITE_VOLUME_NAME}"
     vump --save --volume $VUMP_WEBSITE_VOLUME_NAME --image $VUMP_IMAGE_NAME
 
     # ╭──────────────────────────────────────────────────────────╮
     # │                    COPY DB INTO IMAGE                    │
     # ╰──────────────────────────────────────────────────────────╯
+    printf "\n\nCopying database file into image ${TEXT_VIOLET_500}%s${RESET_TEXT}\n\n" "${VUMP_IMAGE_NAME}"
     if ! docker run\
         -v "$PWD":/mount-pwd \
         $VUMP_IMAGE_NAME \
@@ -1124,7 +1125,6 @@ function cmd_run_export_registry()
     # ╭──────────────────────────────────────────────────────────╮
     # │                    EXPORT TO REGISTRY                    │
     # ╰──────────────────────────────────────────────────────────╯
-    
 }
 
 
@@ -1177,9 +1177,10 @@ function cmd_import_registry() {
         VUMP_DB_DATABASE="$VUMP_DB_DATABASE"
     fi
 
-    printf "The website data in /volume-data/ will be put into the '${VUMP_WEBSITE_VOLUME_NAME}' volume.\n"
-    printf "The database data in /db-data/ will be loaded into the '${VUMP_DATABASE_CONTAINER_NAME}' container.\n\n"
-    confirmation "Website backup from '${VUMP_REGISTRY_REPO}' will be loaded into '${VUMP_DATABASE_CONTAINER_NAME}' DB container and ${VUMP_WEBSITE_VOLUME_NAME} website volume."
+    printf "The website data in ${TEXT_TEAL_500}%s${RESET_TEXT} will be loaded into the ${TEXT_VIOLET_500}%s${RESET_TEXT} volume.\n" "/volume-data/" "${VUMP_WEBSITE_VOLUME_NAME}" 
+    printf "The database data in ${TEXT_TEAL_500}%s${RESET_TEXT} will be loaded into the ${TEXT_VIOLET_500}%s${RESET_TEXT} container.\n\n" "/db-data/" "${VUMP_DATABASE_CONTAINER_NAME}" 
+
+    confirmation "Website backup will be loaded from registery: ${VUMP_REGISTRY_REPO}"
     
     cmd_run_import_registry
 
@@ -1193,11 +1194,14 @@ function cmd_run_import_registry()
     # ╰──────────────────────────────────────────────────────────╯
     pull_from_registry
 
+    printf "\nLoading image ${TEXT_VIOLET_500}%s${RESET_TEXT} into volume ${TEXT_VIOLET_500}%s${RESET_TEXT}\n\n" "${VUMP_REGISTRY_REPO}:${VUMP_PULL_TAG}" "${VUMP_WEBSITE_VOLUME_NAME}"
     vump --load --image $VUMP_REGISTRY_REPO:$VUMP_PULL_TAG --volume $VUMP_WEBSITE_VOLUME_NAME
 
+    printf "\nLoading database ${TEXT_VIOLET_500}%s${RESET_TEXT} into container ${TEXT_VIOLET_500}%s${RESET_TEXT}\n\n" "${VUMP_DB_DATABASE}" "${VUMP_DATABASE_CONTAINER_NAME}"
     vump --dbload --image $VUMP_REGISTRY_REPO:$VUMP_PULL_TAG --container $VUMP_DATABASE_CONTAINER_NAME --database $VUMP_DB_DATABASE --username $VUMP_DB_USERNAME --password $VUMP_DB_PASSWORD
+    
+    printf "\nRemoving backup.sql\n\n"
     rm ./backup.sql
-
 
 }
 
