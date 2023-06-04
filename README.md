@@ -317,3 +317,17 @@ The `vump_menu` script is also a wrapper to `vump` that gives you a nicer menu f
 #                                 └─────────────────────────┘
 #
 ```
+
+
+## Build from SRC file
+
+Within the ./src folder is the source files to the script split across multiple files. 
+
+You can use the [Standalone](https://github.com/IORoot/standalone) tool to replace any `source ./file` lines with the actual contents of that file.
+
+```bash
+
+cd docker-vump/src
+standalone --input vump_site.src --output  ../vump_site
+
+```

@@ -36,6 +36,79 @@ source ./inc/menu_builder
 source ./inc/spinner
 
 
+# ╭──────────────────────────────────────────────────────────╮
+# │                          USAGE                           │
+# ╰──────────────────────────────────────────────────────────╯
+
+usage()
+{
+    if [ "$#" -lt 1 ]; then
+
+        cat <<EOF
+
+    🚚 Vump Site
+
+        This is a wrapper script around the vump tool. It quickly allows you to save and load to a container registry.
+
+        It will extract the website code and database, put them into a backup docker-image and push to the registry.
+
+        This caters for a general website container setup (like wordpress) where you have one container for the code
+        and another for the database.
+
+        [-l|--load]
+
+        Automatically run the load command. No prompts. Use for backups / crons.
+
+        [-s|--save]
+
+        Automatically run the save command. No prompts. Use for backups / crons.
+
+
+EOF
+
+        exit 1
+    fi
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │         Take the arguments from the command line         │
+# ╰──────────────────────────────────────────────────────────╯
+function arguments()
+{
+    POSITIONAL_ARGS=()
+
+    while [[ $# -gt 0 ]]; do
+    case $1 in
+
+        -s|--save)
+            SAVE="TRUE"
+            shift
+            ;;
+
+
+        -n|--noprompt)
+            LOAD="TRUE"
+            shift
+            shift
+            ;;
+
+
+        -*|--*)
+            echo "Unknown option $1"
+            exit 1
+            ;;
+
+
+        *)
+            POSITIONAL_ARGS+=("$1") # save positional arg back onto variable
+            shift                   # remove argument and shift past it.
+            ;;
+    esac
+    done
+    
+}
+
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║                                                                              ║
 # ║                                MENU FUNCTIONS                                ║
@@ -44,40 +117,49 @@ source ./inc/spinner
 
 function mainmenu()
 {
-    
-    MENU='
-        {
-        "select": {
-            "heading": "'${TEXT_YELLOW_500}'Select the task to perform.",
-            "clear": true,
-            "clear_before_command": true,
-            "icon": "ICON_FADE_200",
-            "hide_message": true,
-            "display_help": true,
-            "reset_loop": false,
-            "previous_step": "exit",
-            "options": [
-                {
-                    "title": "Save ⏩ to container registry",
-                    "title_style": "",
-                    "description": "Backup docker website code, assets and database.",
-                    "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_export_registry; push_to_registry; exit",
-                    "bullet": "BORDER_SKY_400"
-                },
-                {
-                    "title": "Load ⏪ from container registry",
-                    "title_style": "",
-                    "description": "Recover docker website code, assets and database.",
-                    "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_import_registry; exit",
-                    "bullet": "BORDER_EMERALD_400"
-                }
-            ]
-        }
-    }'
-    menu "$MENU"
 
+    if [ ! -z "$SAVE" ]; then
+        NOPROMPT="TRUE"
+        cmd_export_registry; 
+        push_to_registry;
+    elif [ ! -z "$LOAD" ]; then
+        NOPROMPT="TRUE"
+        cmd_import_registry; 
+        exit
+    else
+        MENU='
+            {
+            "select": {
+                "heading": "'${TEXT_YELLOW_500}'Select the task to perform.",
+                "clear": true,
+                "clear_before_command": true,
+                "icon": "ICON_FADE_200",
+                "hide_message": true,
+                "display_help": true,
+                "reset_loop": false,
+                "previous_step": "exit",
+                "options": [
+                    {
+                        "title": "Save ⏩ to container registry",
+                        "title_style": "",
+                        "description": "Backup docker website code, assets and database.",
+                        "description_style": "TEXT_GRAY_500",
+                        "command": "cmd_export_registry; push_to_registry; exit",
+                        "bullet": "BORDER_SKY_400"
+                    },
+                    {
+                        "title": "Load ⏪ from container registry",
+                        "title_style": "",
+                        "description": "Recover docker website code, assets and database.",
+                        "description_style": "TEXT_GRAY_500",
+                        "command": "cmd_import_registry; exit",
+                        "bullet": "BORDER_EMERALD_400"
+                    }
+                ]
+            }
+        }'
+        menu "$MENU"
+    fi
 }
 
 
@@ -133,8 +215,10 @@ function cmd_export_registry() {
     printf "The website data from '${VUMP_WEBSITE_VOLUME_NAME}' will be in /volume-data/\n"
     printf "The database data from '${VUMP_DATABASE_CONTAINER_NAME}' will be in /db-data/\n\n"
     
-    confirmation "You are going to export '${VUMP_WEBSITE_VOLUME_NAME}' and '${VUMP_DATABASE_CONTAINER_NAME}' to registry ${VUMP_REGISTRY_REPO}"
-
+    if [ -z "$NOPROMPT" ]; then
+        confirmation "You are going to export '${VUMP_WEBSITE_VOLUME_NAME}' and '${VUMP_DATABASE_CONTAINER_NAME}' to registry ${VUMP_REGISTRY_REPO}"
+    fi
+    
     spin "cmd_run_export_registry" "Exporting" "export_registry" 
 
 }
@@ -231,8 +315,11 @@ function cmd_import_registry() {
 
     printf "The website data in /volume-data/ will be put into the '${VUMP_WEBSITE_VOLUME_NAME}' volume.\n"
     printf "The database data in /db-data/ will be loaded into the '${VUMP_DATABASE_CONTAINER_NAME}' container.\n\n"
-    confirmation "Website backup from '${VUMP_REGISTRY_REPO}' will be loaded into '${VUMP_DATABASE_CONTAINER_NAME}' DB container and ${VUMP_WEBSITE_VOLUME_NAME} website volume."
     
+    if [ -z "$NOPROMPT" ]; then
+        confirmation "Website backup from '${VUMP_REGISTRY_REPO}' will be loaded into '${VUMP_DATABASE_CONTAINER_NAME}' DB container and ${VUMP_WEBSITE_VOLUME_NAME} website volume."
+    fi
+
     cmd_run_import_registry
 
 }
@@ -255,4 +342,6 @@ function cmd_run_import_registry()
 
 
 stylesheet
+usage "$@"
+arguments "$@"
 mainmenu

@@ -20,8 +20,11 @@ function push_to_registry()
     printf "The image $VUMP_IMAGE_NAME:latest will be pushed to the following locations:\n"
     printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:latest ${RESET_TEXT} \n"
     printf "${ICON_CIRCLE} ${TEXT_GREEN_500}$VUMP_REGISTRY_REPO:$IMAGE_ID ${RESET_TEXT} \n\n"
-    confirmation "Do you want to push image to container registry?"
 
+    if [ -z "$NOPROMPT" ]; then
+        confirmation "Do you want to push image to container registry?"
+    fi
+    
     printf "\n"
 
     # ╭──────────────────────────────────────────────────────────╮
