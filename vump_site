@@ -993,9 +993,8 @@ function spin()
 
 usage()
 {
-    if [ "$#" -lt 1 ]; then
 
-        cat <<EOF
+cat <<EOF
 
     🚚 Vump Site
 
@@ -1014,11 +1013,13 @@ usage()
 
         Automatically run the save command. No prompts. Use for backups / crons.
 
+        [-h|--help]
+
+        Show this usage.
+
 
 EOF
 
-        exit 1
-    fi
 }
 
 
@@ -1038,15 +1039,22 @@ function arguments()
             ;;
 
 
-        -n|--noprompt)
+        -l|--load)
             LOAD="TRUE"
             shift
+            ;;
+
+
+        -h|--help)
+            usage
+            exit 0
             shift
             ;;
 
 
         -*|--*)
             echo "Unknown option $1"
+            usage
             exit 1
             ;;
 
@@ -1293,6 +1301,5 @@ function cmd_run_import_registry()
 
 
 stylesheet
-usage "$@"
 arguments "$@"
 mainmenu
